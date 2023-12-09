@@ -11,9 +11,9 @@
       - [On the k8s-master](#on-the-k8s-master)
       - [On the k8s-worker](#on-the-k8s-worker)
       - [On your workstation](#on-your-workstation)
-      - [Install the kube configuration](#install-the-kube-configuration)
-      - [Install kubectl and calicoctl](#install-kubectl-and-calicoctl)
-      - [Install k9s](#install-k9s)
+        - [Install the kube configuration](#install-the-kube-configuration)
+        - [Install kubectl and calicoctl](#install-kubectl-and-calicoctl)
+        - [Install k9s](#install-k9s)
     - [Install Calico](#install-calico)
   - [Verification](#verification)
 
@@ -96,7 +96,7 @@ Once you've join the node to the cluster, from both nodes, you should be able to
 
 #### On your workstation
 
-#### Install the kube configuration
+##### Install the kube configuration
 
 Copy the `${HOME}/.kube/config` from the K8s master node to your local machine.  This'll allow you to control the cluster without needing to remain logged into either of the `k8s-master` or `k8s-worker` instances.
 
@@ -107,14 +107,14 @@ umask 027
 scp k8s-master1:.kube/config $HOME/.kube/config
 ```
 
-#### Install kubectl and calicoctl
+##### Install kubectl and calicoctl
 
 When installing both `kubectl` and `calicoctl` make sure you choose the version that aligns with the kubernetes cluster that you've deployed.  To find this out, run `kubectl get nodes` on one of your current nodes.
 
 - Download and install `kubectl` from [https://kubernetes.io/docs/tasks/tools/](https://kubernetes.io/docs/tasks/tools/)
 - Download and install `calicoctl` from [https://docs.tigera.io/calico/latest/operations/calicoctl/install](https://docs.tigera.io/calico/latest/operations/calicoctl/install)
 
-#### Install k9s
+##### Install k9s
 
 - Download k9s at [https://github.com/derailed/k9s/releases](https://github.com/derailed/k9s/releases)
 
