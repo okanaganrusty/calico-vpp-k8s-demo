@@ -28,11 +28,11 @@
 ### Virtual Machine Configuration
 
 - Linux host, running qemu-kvm, and gobgpd (IBGP AS 65535)
-  - enp4s0: Unnumbered interface (`192.168.1.100/24`, gateway: `192.168.1.254`)
-  - virbr0: RFC 1918 network (`172.16.0.0/23`)
+  - `enp4s0`: Unnumbered interface (`192.168.1.100/24`, gateway: `192.168.1.254`)
+  - `virbr0`: RFC 1918 network (`172.16.0.0/23`)
     - Using static DHCP to assign addresses to our VM hosts
-      - k8s-master1 receives the address `172.16.0.10`
-      - k8s-worker1 receives the address `172.16.0.20`
+      - `k8s-master1` receives the address `172.16.0.10`
+      - `k8s-worker1` receives the address `172.16.0.20`
 
 - VM: `k8s-master`: Kubernetes control node
 - VM: `k8s-worker`: Kubernetes worker node (optional)
@@ -141,6 +141,17 @@ curl -O https://raw.githubusercontent.com/projectcalico/vpp-dataplane/v3.26.0/ya
 
     - Edit `calico-vpp-nohuge.yaml` and update the interface and service prefix
 
+    ```yaml
+    # Edit the current config maps (after the installation)
+    #
+    # * Update the CALICO_VPP_INTERFACES section
+    #       ...
+    #       "uplinkInterfaces": [{ "interfaceName": "enp2s0", "vppDriver": "af_packet" }]
+    #       ...
+    #
+    # * Update the SERVICE_PREFIX, to 10.10.2.0/23
+    ```
+
     - Edit `custom-resources.yaml` and update the IP pools to match our IP pools for our pods
 
     ```yaml
@@ -163,19 +174,19 @@ curl -O https://raw.githubusercontent.com/projectcalico/vpp-dataplane/v3.26.0/ya
     - Create the `tigera-operator.yaml`
 
     ```bash
-    kubectl create -f tigera-operator.yaml
+    kubectl apply -f tigera-operator.yaml
     ```
 
     - Create the `custom-resources.yaml`
 
     ```bash
-    kubectl create -f custom-resources.yaml
+    kubectl apply -f custom-resources.yaml
     ```
 
-    - Create the `calico-vpp-nohuge.yaml`
+    - Apply the `calico-vpp-nohuge.yaml`
 
     ```bash
-    kubectl create -f calico-vpp-nohuge.yaml
+    kubectl apply -f calico-vpp-nohuge.yaml
     ```
 
 2. Check the pods have all been started by the operator (which starts a deployment); you should see that the tigera-operator deployment is available and up-to-date.
@@ -184,17 +195,17 @@ curl -O https://raw.githubusercontent.com/projectcalico/vpp-dataplane/v3.26.0/ya
 kubectl get deployments -n tigera-operator
 ```
 
-1. Apply the calico-vpp manifest (we are not supporting hugepages; hugepage support requires 512 x 2MB pages)
+1. ~Apply the calico-vpp manifest (we are not supporting hugepages; hugepage support requires 512 x 2MB pages)~
 
 ```bash
-# Edit the current config maps (after the installation)
+# Verify the current config maps (after the installation)
 #
-# * Update the CALICO_VPP_INTERFACES section
+# * CALICO_VPP_INTERFACES section
 #       ...
-#       "uplinkInterfaces": [{ "interfaceName": "enp7s0", "vppDriver": "af_packet" }]
+#       "uplinkInterfaces": [{ "interfaceName": "enp2s0", "vppDriver": "af_packet" }]
 #       ...
 #
-# * Update the SERVICE_PREFIX, to 10.10.2.0/23
+# * SERVICE_PREFIX should be 10.10.2.0/23
 
 kubectl edit configmap -n calico-vpp-dataplane calico-vpp-config
 ```
@@ -258,10 +269,10 @@ spec:
     reportingInterval: 0s
 EOF
 
-kubectl apply -f felix-config-default.yaml
+calicoctl apply --allow-version-mismatch --filename felix-config-default.yaml
 ```
 
-2. Optionally, add the IP pools for calico to assign pod IPs
+2. Add the IP pools for calico to assign pod IPs (optional)
 
 This IP pool is automatically created for us.  If we wanted to rename it, or change the properties of the IP pools assigned to nodes.
 
@@ -300,7 +311,7 @@ spec:
   bindMode: NodeIP
   listenPort: 179
   logSeverityScreen: Info
-  nodeToNodeMeshEnabled: false
+  nodeToNodeMeshEnabled: true
   serviceClusterIPs:
   - cidr: 10.10.2.0/23
 EOF
