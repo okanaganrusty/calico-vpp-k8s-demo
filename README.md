@@ -8,7 +8,9 @@
     - [Kubernetes Networks](#kubernetes-networks)
   - [Installation](#installation)
     - [Initialization of the kubernetes cluster](#initialization-of-the-kubernetes-cluster)
-      - [Workstation Initialization](#workstation-initialization)
+      - [On the k8s-master](#on-the-k8s-master)
+      - [On the k8s-worker](#on-the-k8s-worker)
+      - [On your workstation](#on-your-workstation)
     - [Install Calico](#install-calico)
   - [Verification](#verification)
 
@@ -44,6 +46,8 @@
 
 ### Initialization of the kubernetes cluster
 
+#### On the k8s-master
+
 ```bash
 # If you have already initialized a cluster, you don't need to do this,
 # if you want to start a clean cluster (you will loose all your existing
@@ -73,7 +77,21 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 # Optional: kubectl taint nodes --all node-role.kubernetes.io/master-
 ```
 
-#### Workstation Initialization
+#### On the k8s-worker
+
+Copy the `kubeadm join` command from the `k8s-master` node, to join the two instances.
+
+  > If you have already lost this or the token has expired, run the command `kubeadm token create --print-join-command` on the `k8s-master` and it will generate a new token to join the cluster.
+
+```bash
+kubeadm join 172.16.0.10:6443 \
+  --token [token] \
+  --discovery-token-ca-cert-hash sha256:[sha256 hash]
+```
+
+Once you've join the node to the cluster, from both nodes, you should be able to run `kubectl get nodes -o wide` and see that both nodes are aware of eachothers existence.
+
+#### On your workstation
 
 Copy the `${HOME}/.kube/config` from the K8s master node to your local machine.  This'll allow you to control the cluster without needing to remain logged into either of the `k8s-master` or `k8s-worker` instances.
 
