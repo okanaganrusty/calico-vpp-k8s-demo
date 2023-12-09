@@ -132,62 +132,53 @@ cd calico-vpp/manifests
 1. Download the manifests for the calico and calico-vpp installations
 
 ```bash
-curl -O https://raw.githubusercontent.com/projectcalico/calico/v3.26.4/manifests/tigera-operator.yaml
-curl -O https://raw.githubusercontent.com/projectcalico/calico/v3.26.4/manifests/custom-resources.yaml
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.4/manifests/tigera-operator.yaml
+
+curl -O https://raw.githubusercontent.com/projectcalico/vpp-dataplane/v3.26.0/yaml/calico/installation-default.yaml
 curl -O https://raw.githubusercontent.com/projectcalico/vpp-dataplane/v3.26.0/yaml/generated/calico-vpp-nohuge.yaml
 ```
 
 1. Edit and then apply the tigera, custom resources and installation default manifests
 
-    - Edit `calico-vpp-nohuge.yaml` and update the interface and service prefix
+    1. Edit `custom-resources.yaml` and update the IP pools to match our IP pools for our pods
 
-    ```yaml
-    # Edit the current config maps (after the installation)
-    #
-    # * Update the CALICO_VPP_INTERFACES section
-    #       ...
-    #       "uplinkInterfaces": [{ "interfaceName": "enp2s0", "vppDriver": "af_packet" }]
-    #       ...
-    #
-    # * Update the SERVICE_PREFIX, to 10.10.2.0/23
-    ```
+        ```yaml
+        apiVersion: operator.tigera.io/v1
+        kind: Installation
+        metadata:
+          name: default
+        spec:
+          # Configures Calico networking.
+          calicoNetwork:
+            # Note: The ipPools section cannot be modified post-install.
+            ipPools:
+            - blockSize: 28
+              cidr: 10.10.0.0/23
+              encapsulation: VXLANCrossSubnet
+              natOutgoing: Enabled
+              nodeSelector: all()
+        ```
 
-    - Edit `custom-resources.yaml` and update the IP pools to match our IP pools for our pods
+    2. Apply the update `kubectl apply -f custom-resources.yaml`
 
-    ```yaml
-    apiVersion: operator.tigera.io/v1
-    kind: Installation
-    metadata:
-      name: default
-    spec:
-      # Configures Calico networking.
-      calicoNetwork:
-        # Note: The ipPools section cannot be modified post-install.
-        ipPools:
-        - blockSize: 28
-          cidr: 10.10.0.0/23
-          encapsulation: VXLANCrossSubnet
-          natOutgoing: Enabled
-          nodeSelector: all()
-    ```
+    3. Edit `installation-default.yaml` and verify that the `linuxDataplane` is set to `VPP`.  You cannot change this after the fact.
 
-    - Create the `tigera-operator.yaml`
+    4. Apply the update `kubectl apply -f installation-default.yaml`
 
-    ```bash
-    kubectl apply -f tigera-operator.yaml
-    ```
+    5. Edit `calico-vpp-nohuge.yaml` and update the interface and service prefix
 
-    - Create the `custom-resources.yaml`
+        ```yaml
+        # Edit the current config maps (after the installation)
+        #
+        # * Update the CALICO_VPP_INTERFACES section
+        #       ...
+        #       "uplinkInterfaces": [{ "interfaceName": "enp2s0", "vppDriver": "af_packet" }]
+        #       ...
+        #
+        # * Update the SERVICE_PREFIX, to 10.10.2.0/23
+        ```
 
-    ```bash
-    kubectl apply -f custom-resources.yaml
-    ```
-
-    - Apply the `calico-vpp-nohuge.yaml`
-
-    ```bash
-    kubectl apply -f calico-vpp-nohuge.yaml
-    ```
+    6. Apply the update `kubectl apply -f calico-vpp-nohuge.yaml`
 
 2. Check the pods have all been started by the operator (which starts a deployment); you should see that the tigera-operator deployment is available and up-to-date.
 
@@ -196,6 +187,8 @@ kubectl get deployments -n tigera-operator
 ```
 
 1. ~Apply the calico-vpp manifest (we are not supporting hugepages; hugepage support requires 512 x 2MB pages)~
+
+  > This is created during our deployment of the tigera operator.
 
 ```bash
 # Verify the current config maps (after the installation)
@@ -210,7 +203,9 @@ kubectl get deployments -n tigera-operator
 kubectl edit configmap -n calico-vpp-dataplane calico-vpp-config
 ```
 
-1. Edit the current installation config map (tigera installation)
+1. ~Edit the current installation config map (tigera installation)~
+
+  > This is created during our deployment of the tigera operator.
 
 ```bash
 # Edit the installation
@@ -220,40 +215,9 @@ kubectl edit configmap -n calico-vpp-dataplane calico-vpp-config
 kubectl edit installation default
 ```
 
-1. Create a simple gobgp configuration on our Linux host (assuming we're using a Debian/Ubuntu distribution with a gobgpd apt package)
+1. ~Create our calico felix configuration~
 
-```bash
-sudo apt install -y gobgpd
-
-cat <<'EOF'>/etc/gobgpd.conf
-[global.config]
-    as = 65535
-    router-id = "172.16.0.1"
-    port = 179
-
-    [global.apply-policy.config]
-        default-import-policy = "accept-route"
-        default-export-policy = "accept-route"
-
-[[peer-groups]]
-  [peer-groups.config]
-    peer-group-name = "peer-group"
-    peer-as = 65535
-  [[peer-groups.afi-safis]]
-    [peer-groups.afi-safis.config]
-      afi-safi-name = "ipv4-unicast"
-
-[[dynamic-neighbors]]
-  [dynamic-neighbors.config]
-    prefix = "172.16.0.0/16"
-    peer-group = "peer-group"
-EOF
-
-# If the service is already running, we'll restart it
-sudo systemctl try-restart gobgpd.service
-```
-
-1. Create our calico felix configuration
+  > This is created during our deployment of the tigera operator.
 
 ```bash
 cat <<'EOF'>felix-config-default.yaml
@@ -272,9 +236,9 @@ EOF
 calicoctl apply --allow-version-mismatch --filename felix-config-default.yaml
 ```
 
-2. Add the IP pools for calico to assign pod IPs (optional)
+1. ~Add the IP pools for calico to assign pod IPs~
 
-This IP pool is automatically created for us.  If we wanted to rename it, or change the properties of the IP pools assigned to nodes.
+  > This IP pool is automatically created for us.  If we wanted to rename it, or change the properties of the IP pools assigned to nodes.
 
 ```bash
 cat <<'EOF'>calico-vpp-ippools.yaml
@@ -333,6 +297,39 @@ spec:
 EOF
 
 calicoctl apply --allow-version-mismatch --filename bgp-peer-global-peer.yaml
+```
+
+1. Create a simple gobgp configuration on our Linux host (assuming we're using a Debian/Ubuntu distribution with a gobgpd apt package)
+
+```bash
+sudo apt install -y gobgpd
+
+cat <<'EOF'>/etc/gobgpd.conf
+[global.config]
+    as = 65535
+    router-id = "172.16.0.1"
+    port = 179
+
+    [global.apply-policy.config]
+        default-import-policy = "accept-route"
+        default-export-policy = "accept-route"
+
+[[peer-groups]]
+  [peer-groups.config]
+    peer-group-name = "peer-group"
+    peer-as = 65535
+  [[peer-groups.afi-safis]]
+    [peer-groups.afi-safis.config]
+      afi-safi-name = "ipv4-unicast"
+
+[[dynamic-neighbors]]
+  [dynamic-neighbors.config]
+    prefix = "172.16.0.0/16"
+    peer-group = "peer-group"
+EOF
+
+# If the service is already running, we'll restart it
+sudo systemctl try-restart gobgpd.service
 ```
 
 ## Verification

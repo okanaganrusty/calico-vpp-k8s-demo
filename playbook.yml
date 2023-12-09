@@ -34,6 +34,9 @@
       with_items:
         - net.bridge.bridge-nf-call-iptables
         - net.bridge.bridge-nf-call-ip6tables
+        # When using af_packet mode, we must allow binding to non-local addresses
+        - net.ipv6.ip_nonlocal_bind
+        - net.ipv4.ip_nonlocal_bind
         - net.ipv4.ip_forward
 
     - name: Install kubernetes archive keyring
