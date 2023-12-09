@@ -1,0 +1,28 @@
+#cloud-config
+autoinstall:
+  version: 1
+  ssh:
+    install-server: true
+    authorized-keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMvOzJk2S4q2/xAqgWQBHAj+6/PKwswVRW5FM5LUOUJ6 russell@mcconnachie.ca
+
+  locale: en_US.UTF-8
+
+  storage:
+    layout:
+      name: lvm
+
+  packages:
+    - ansible
+
+  identity:
+    hostname: k8s-worker
+    realname: Russell McConnachie
+    username: russellm
+    password: "$6$aQ2y8bn6Dil3Jrx3$V7vvt4O.K.DXVEg8R21tkbf/0fHQ.JRdRnecytWUf3kaTuj0eg3Guyao4wVJUiEtUGJGcYmVn/0nYsh/ofXIM0"
+
+  user-data:
+    disable_root: false
+
+  late-commands:
+    - echo 'russellm ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/russellm

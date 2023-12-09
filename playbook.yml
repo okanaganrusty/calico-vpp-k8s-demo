@@ -1,0 +1,95 @@
+---
+- name: k8s Playbook
+  hosts: k8s
+  become: true
+  become_user: root
+  tasks:
+    - name: Disable swap
+      shell: |
+        swapoff -a
+
+    - name: Disable swap in fstab
+      replace:
+        path: /etc/fstab
+        regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+        replace: '# \1'
+
+    - name: Inject /etc/modules-load.d/k8s.conf
+      shell: |
+        cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+        overlay
+        br_netfilter
+        EOF
+
+        modprobe overlay
+        modprobe br_netfilter
+
+    - name: Inject /etc/sysctl.d/k8s.conf
+      sysctl:
+        sysctl_file: /etc/sysctl.d/k8s.conf
+        state: present
+        reload: yes
+        name: "{{ item }}"
+        value: 1
+      with_items:
+        - net.bridge.bridge-nf-call-iptables
+        - net.bridge.bridge-nf-call-ip6tables
+        - net.ipv4.ip_forward
+
+    - name: Install kubernetes archive keyring
+      block:
+        - name: Download the public key for the apt repository
+          shell:
+            curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key | gpg --batch --yes --dearmor -o
+            /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+        - name: Install the apt repository
+          ansible.builtin.apt_repository:
+            filename: kubernetes-archive
+            repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /"
+            update_cache: true
+            state: present
+
+    - name: Install apt packages
+      apt:
+        name: "{{ item }}"
+      with_items:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - docker.io
+        - kubelet
+        - kubeadm
+        - kubectl
+
+    - name: Resize the disks (cheat because we didn't grow the disk during VM creation)
+      shell: sudo lvextend -l +100%FREE -r /dev/ubuntu-vg/ubuntu-lv
+
+    - name: Install containerd
+      block:
+        - name: Create containerd directory
+          file:
+            state: directory
+            path: /etc/containerd
+
+        - name: Initialize default configuration
+          shell: |
+            containerd config default > /etc/containerd/config.toml
+
+        - name: Update the configuration to use systemd cgroups
+          lineinfile:
+            path: /etc/containerd/config.toml
+            search_string: " SystemdCgroup"
+            line: " SystemdCgroup = true"
+
+        - name: Restart containerd (the containerization platform)
+          systemd:
+            state: restarted
+            enabled: yes
+            name: containerd
+
+        - name: Restart kubelet (the primary node agent)
+          systemd:
+            state: restarted
+            enabled: yes
+            name: kubelet

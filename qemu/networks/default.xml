@@ -1,0 +1,17 @@
+<network>
+  <name>default</name>
+  <uuid>b030df2f-4daa-4174-b897-544f82501fc0</uuid>
+  <forward dev='br0' mode='route'>
+    <interface dev='br0'/>
+  </forward>
+  <bridge name='virbr0' stp='on' delay='0'/>
+  <mac address='52:54:00:10:3d:6e'/>
+  <ip address='172.16.0.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='172.16.0.200' end='172.16.0.254'/>
+      <host mac='52:54:00:ff:ff:01' name='k8s-master1' ip='172.16.0.10'/>
+      <host mac='52:54:00:ff:ff:0a' name='k8s-worker1' ip='172.16.0.20'/>
+      <host mac='52:54:00:ff:ff:03' name='k8s-worker2' ip='172.16.0.21'/>
+    </dhcp>
+  </ip>
+</network>
