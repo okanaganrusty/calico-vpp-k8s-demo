@@ -50,7 +50,17 @@
 # resources).
 #
 # sudo kubeadm reset
+sudo systemctl daemon-reload
 
+# Stop kubelet if it's already active, our ansible enables this for us on boot automatically.
+# without needing to rebuild the VM.  We'll stop the kubelet until we've provisioned our new
+# cluster.
+sudo systemctl is-active kubelet && sudo systemctl stop kubelet
+
+# Pull the images ahead of time that k8s will be using to build and operate the cluster.
+sudo kubeadm config images pull
+
+# Initialization of the cluster
 sudo kubeadm init --pod-network-cidr=10.10.0.0/23 --service-cidr=10.10.2.0/23
 
 mkdir -p $HOME/.kube
