@@ -299,37 +299,35 @@ EOF
 calicoctl apply --allow-version-mismatch --filename bgp-peer-global-peer.yaml
 ```
 
-1. Create a simple gobgp configuration on our Linux host (assuming we're using a Debian/Ubuntu distribution with a gobgpd apt package)
+1. Create a simple frr bgp configuration on our Linux router
 
 ```bash
-sudo apt install -y gobgpd
+sudo apt install -y frr
 
-cat <<'EOF'>/etc/gobgpd.conf
-[global.config]
-    as = 65535
-    router-id = "172.16.0.1"
-    port = 179
-
-    [global.apply-policy.config]
-        default-import-policy = "accept-route"
-        default-export-policy = "accept-route"
-
-[[peer-groups]]
-  [peer-groups.config]
-    peer-group-name = "peer-group"
-    peer-as = 65535
-  [[peer-groups.afi-safis]]
-    [peer-groups.afi-safis.config]
-      afi-safi-name = "ipv4-unicast"
-
-[[dynamic-neighbors]]
-  [dynamic-neighbors.config]
-    prefix = "172.16.0.0/16"
-    peer-group = "peer-group"
+cat <<'EOF'>/etc/frr/frr.conf
+frr version 8.4.4
+frr defaults traditional
+hostname router
+log syslog informational
+no ipv6 forwarding
+service integrated-vtysh-config
+!
+router bgp 65535
+ bgp router-id 172.16.0.1
+ bgp log-neighbor-changes
+ neighbor 172.16.0.10 remote-as 65535
+ neighbor 172.16.0.20 remote-as 65535
+ !
+ address-family ipv4 unicast
+  network 172.16.0.0/16
+ exit-address-family
+exit
+!
+ip prefix-list PL_ALLOW_ALL seq 5 permit 0.0.0.0/0
 EOF
 
 # If the service is already running, we'll restart it
-sudo systemctl try-restart gobgpd.service
+sudo systemctl try-restart frr.service
 ```
 
 ## Verification
