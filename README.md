@@ -2,20 +2,20 @@
 
 <!-- toc -->
 
--   [K8s and Calico VPP](#k8s-and-calico-vpp)
-    -   [Prerequistes](#prerequistes)
-        -   [Virtual Machine Configuration](#virtual-machine-configuration)
-        -   [Kubernetes Networks](#kubernetes-networks)
-    -   [Installation](#installation)
-        -   [Initialization of the kubernetes cluster](#initialization-of-the-kubernetes-cluster)
-            -   [On the k8s-master](#on-the-k8s-master)
-            -   [On the k8s-worker](#on-the-k8s-worker)
-            -   [On your workstation](#on-your-workstation)
-                -   [Install the kube configuration](#install-the-kube-configuration)
-                -   [Install kubectl and calicoctl](#install-kubectl-and-calicoctl)
-                -   [Install k9s](#install-k9s)
-        -   [Install Calico](#install-calico)
-    -   [Verification](#verification)
+- [Prerequistes](#prerequistes)
+  * [Virtual Machine Configuration](#virtual-machine-configuration)
+  * [Kubernetes Networks](#kubernetes-networks)
+- [Known Issues](#known-issues)
+- [Installation](#installation)
+  * [Initialization of the kubernetes cluster](#initialization-of-the-kubernetes-cluster)
+    + [On the k8s-master](#on-the-k8s-master)
+    + [On the k8s-worker](#on-the-k8s-worker)
+    + [On your workstation](#on-your-workstation)
+      - [Install the kube configuration](#install-the-kube-configuration)
+      - [Install kubectl and calicoctl](#install-kubectl-and-calicoctl)
+      - [Install k9s](#install-k9s)
+  * [Install Calico](#install-calico)
+- [Verification](#verification)
 
 <!-- tocstop -->
 
